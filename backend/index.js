@@ -260,12 +260,28 @@ app.delete('trajet/couverture/delete/:id',(req,res)=>{
 //_______________________________________Routes des réservations
 
 app.get('/reservation',(req,res)=>{
-    const q = 'SELECT idReservation,users.nom,compagnie.nomCompagnie,dateReservation,reservation.idTrajet FROM users,compagnie,reservation,trajet WHERE users.iduser = reservation.iduser AND reservation.idCompagnie = compagnie.idCompagnie AND trajet.idtrajet=reservation.idtrajet'
+    const q = 'SELECT idReservation,users.nom,compagnie.nomCompagnie,dateReservation,reservation.idTrajet ,reservation.nbreplace, reservation.montant FROM users,compagnie,reservation,trajet WHERE users.iduser = reservation.iduser AND reservation.idCompagnie = compagnie.idCompagnie AND trajet.idtrajet=reservation.idtrajet'
     db.query(q,(err,data)=>{  // La liste des reservations
         if(err) return res.json(err)
         return res.json(data)
     })
 })
+app.post('/reservation',(req,res)=>{
+    const q = "INSERT INTO reservation (iduser,idCompagnie,dateReservation,idTrajet,montant,nbreplace) VALUES(?)"
+    const values = [
+        req.body.iduser,
+        req.body.idCompagnie,
+        req.body.dateReservation,
+        req.body.idTrajet,
+        req.body.montant,
+        req.body.nbreplace
+    ]
+    db.query(q,[values],(err,data)=>{
+        if(err) return res.json(err)
+        return res.json('success')
+    })
+})
+
 app.delete('/reservation/:id',(req,res)=>{
     const q = "DELETE FROM reservation WHERE idreservation = ?" //Supprimer une réservation
     const id = req.params.id
@@ -282,6 +298,20 @@ app.get('/notification',(req,res)=>{
     db.query(q,(err,data)=>{ // Liste des commentaires 
         if(err) return res.json(err)
         return res.json(data)
+    })
+})
+
+app.post('/message',(req,res)=>{
+    const q = "INSERT INTO notification(nom,prenom,email,message) VALUES (?)"
+    const values = [
+        req.body.nom,
+        req.body.prenom,
+        req.body.email,
+        req.body.content
+    ]
+    db.query(q,[values],(err,data)=>{
+        if(err) return res.json(err)
+        return res.json('success')
     })
 })
 
@@ -320,7 +350,7 @@ app.get('/client/trajet/:Depart/:Arrivee',(req,res)=>{
 })
 app.get('/client/couverture/:idTrajet',(req,res)=>{
     console.log('idTrajet:', req.params.idTrajet);
-    const q = 'SELECT id,nomCompagnie,heureDepart,prix FROM compagnie,trajet,couvrir WHERE compagnie.idCompagnie=couvrir.idCompagnie AND trajet.idTrajet=couvrir.idTrajet AND couvrir.idTrajet = ?'// couverture du trajet par une compagnie
+    const q = 'SELECT id,couvrir.idCompagnie,nomCompagnie,heureDepart,prix FROM compagnie,trajet,couvrir WHERE compagnie.idCompagnie=couvrir.idCompagnie AND trajet.idTrajet=couvrir.idTrajet AND couvrir.idTrajet = ?'// couverture du trajet par une compagnie
     const id = req.params.idTrajet
     db.query(q,[id],(err,data)=>{
         if(err){
@@ -331,19 +361,6 @@ app.get('/client/couverture/:idTrajet',(req,res)=>{
     })
 })
 
-app.post('/notification',(req,res)=>{
-    const q = 'INSERT INTO notification (nom,prenom,email,message) VALUES (?)'
-    const values = [
-        req.body.name,
-        req.body.prenom,
-        req.body.email,
-        req.body.message
-    ]
-    db.query(q,[values],(err,data)=>{
-        if(err) return res.json(err)
-        return res.json('success')
-    })
-})
 
 // ------------------------- Demarrage du server
 app.listen(port,()=>{
